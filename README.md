@@ -1,4 +1,4 @@
 # Chip8
 Not done
  ## Acknowledgement
-#### KAJANAN CHINNIAH THE GOD CODER
+#### My SIN(PI) KAJANAN CHINNIAH THE GOD CODER FOR TEACHiNG ME 
