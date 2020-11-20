@@ -5,8 +5,6 @@
 using namespace std;
 
 Chip8::Chip8(Display* display){
-	this->display = display;
-	PGR_loaded = false;
 }
 
 
