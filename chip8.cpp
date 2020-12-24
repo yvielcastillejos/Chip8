@@ -98,7 +98,7 @@ kk or byte - An 8-bit value, the lowest 8 bits of the instruction
 	uint8_t n = ins & 0x000F;
 	uint8_t x = (ins>>8) & 0x000F;
 	uint8_t y = (ins>>4) & 0x000F;
-	uint8_t byte = opcode & 0x00FF;
+	uint8_t byte = ins & 0x00FF;
 
 
 	/* SEE INSTRUCTIONS AT http://devernay.free.fr/hacks/chip8/C8TECH10.HTM */
@@ -226,11 +226,181 @@ kk or byte - An 8-bit value, the lowest 8 bits of the instruction
 			V[x] = random_number & byte;
 			break;
 		}
+		case 0xD:{
+			uint8_t* sprite = (uint8_t*)malloc(n);
+			memcpy(sprite, &MEMORY[I], sizeof(uint8_t)*n);
+			V[0xF] = display->drawSprite(V[x], V[y], sprite_data, n );
+			free(sprite);
+			updateDisplay = true;
+			break;
+		}
+		case 0xE:{
+			if (byte==0x9E){
+				// If the corresponding key of V[x] is in down position, increase PC by 2
+				if (keypad.getKeyState(V[x])){
+					PC += 2;
+				}
+			}
+			else if (byte == 0xA1){
+				if (!keypad.getKeyState(V[x])){
+					PC+=2;
+				}
+			}
+			break;
+		}
+		case 0xF: {
+            		switch(byte) {
+            		    case 0x07: {
+                    		V[x] = delay_timer;
+				break;
+				}
+			    case 0x0A: {
+                 		   waitingForInput = true;
+                 		   for(unsigned i = 0; i < 16; i++) {
+                       		       if(keypad.getKeyState(i)) {                            
+                        	    		V[x] = i;
+                      			        waitingForInput = false;
+                            			break;
+                        			}                        
+                   			}
+		  		  break;
+				}
+			    case 0x15: {
+				delay_timer = V[x];
+				break;
+				}
+			    case 0x18: {
+				sound_timer = V[x];
+				break;
+				}
+			    case 0x1E: {
+				I = I + V[x];
+				break;
+			    }
+			    case 0x29: {
+				switch(V[x]){
+					case 0x0: {
+					    I = 0; 
+					    break;
+					}
+					case 0x1: {
+					    I = 5; 
+					    break;
+					}
+					case 0x2: {
+					    I = 10; 
+					    break;
+					}
+					case 0x3: {
+					    I = 15; 
+					    break;
+					}
+					case 0x04: {
+					    I = 20; 
+					    break;
+					}
+					case 0x05: {
+					    I = 25; 
+					    break;
+					}
+					case 0x06: {
+					    I = 30; 
+					    break;
+					}
+					case 0x7: {
+					    I = 35; 
+					    break;
+					}
+					case 0x08: {
+					    I = 40; 
+					    break;
+					}
+					case 0x09: {
+					    I = 45; 
+					    break;
+					}
+					case 0x0A: {
+					    I = 50; 
+					    break;
+					}
+					case 0x0B: {
+					    I = 55; 
+					    break;
+					}
+					case 0x0C: {
+					    I = 60; 
+					    break;
+					}
+					case 0x0D: {
+					    I = 65; 
+					    break;
+					}
+					case 0x0E: {
+					    I = 70; 
+					    break;
+					}
+					case 0x0F: {
+					    I = 75; 
+					    break;
+					}
+				    }
+				    break;
+				}
+			case 0x33: {
+				unsigned bcd = V[x];
+				uint8_t bcd_hundreds = bcd/100;
+				uint8_t bcd_tens = (bcd/10)%10;
+				uint8_t bcd_ones = bcd%10;
 
-
-
-
-
-
-
+				MEMORY[I] = bcd_hundreds;
+				MEMORY[I+1] = bcd_tens;
+				MEMORY[ I + 2] = bcd_ones;
+				break;
+				}
+			case 0x55:{
+				unsigned i;
+				for(i=0;i<x;i++){
+					MEMORY[I+1] = V[i];
+				}
+				break;
+				}
+			case 0x65: {
+				unsigned i;
+                     		for( i = 0; i < x; i++ ) {
+                     		   V[i] = MEMORY[I + i];
+               				break;	
+				}
+			}
+			break;
+		}
+		default: {
+			cout<<"Exit"<<endl;
+			exit(1);
+		}
+	}
 }
+
+
+void Chip8::Cycle(){
+	decode((MEMORY[PC]<<8)|MEMORY[++PC]);
+	if (waitingForInput){
+		PC -= 2;
+	}
+}
+
+void Chip8::timeupdate(int dt, unsigned FPS){
+	accumtime += dt;
+	while( accumtime > (1000/FPS)){
+		accumtime -= (1000/FPS);
+		if (delay_timer > 0){
+			delay_timer--;
+		}
+		if (sound_timer>0){
+			speaker.Play(dt);
+			sound_timer--;
+		} else{
+			speaker.Stop();
+		}
+	}
+}
+

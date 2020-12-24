@@ -23,6 +23,7 @@ class Chip8{
         	void load(const char* path);
         	void select(uint16_t ins);
         	void Cycle();
+		void timeupdate();
 
 	protected:
 		Display* display;
@@ -53,9 +54,9 @@ class Chip8{
 		bool PGR_loaded;
 	//	bool waitingForInput;
 	//	bool updateDisplay;
-		unsigned accumDelta; //Accums delta time between frames, for timers update
+		unsigned accum_time; //Accums delta time between frames, for timers update
 
 		//stack helpers
 		void push(uint16_t v);
 		void pop();  
-		}
+		};
